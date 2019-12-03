@@ -6,7 +6,7 @@ This module is versioned and released on the Terraform module registry. Look for
 the tag that corresponds to your version for the correct documentation.
 
 - **Vault HA** - Vault is configured to run in high availability mode with
-  Google Cloud Storage. Choose a `min_num_vault_servers` greater than 0 to
+  Google Cloud Storage. Choose a `vault_min_num_servers` greater than 0 to
   enable HA mode.
 
 - **Production hardened** - Vault is deployed according to applicable parts of
@@ -81,7 +81,7 @@ the tag that corresponds to your version for the correct documentation.
 1. Configure your local Vault binary to communicate with the Vault server:
 
     ```
-    $ export VAULT_ADDR="$(terraform output vault_addr)"
+    $ export VAULT_ADDR="$(terraform output vault-address)"
     $ export VAULT_CACERT="$(pwd)/ca.crt"
     ```
 
@@ -190,6 +190,17 @@ Instance" tagged as "vaultproject.io/audit".
   KMS and the encrypted text is cached locally on disk in the `kms/` folder.
   Even though the data is encrypted, you should secure this folder (it is
   automatically ignored from source control).
+
+
+## Sandboxes & Terraform Cloud
+
+When running in a sandbox such as Terraform Cloud, you need to disable
+filesystem access. You can do this by setting the following variables:
+
+```terraform
+# terraform.tfvars
+tls_save_ca_to_disk = false
+```
 
 
 ## FAQ
