@@ -12,6 +12,7 @@ fi
 LOCAL_IP="$(curl -sf -H "Metadata-Flavor: Google" http://metadata/computeMetadata/v1/instance/network-interfaces/0/ip)"
 
 # Deps
+export DEBIAN_FRONTEND=noninteractive
 apt-get update -yqq
 apt-get upgrade -yqq
 apt-get install -yqq jq libcap2-bin logrotate netcat nginx unzip
@@ -22,10 +23,10 @@ curl -sSfL https://dl.google.com/cloudagents/install-monitoring-agent.sh | bash
 
 # Download and install Vault
 cd /tmp && \
-  curl -sLfO https://releases.hashicorp.com/vault/${vault_version}/vault_${vault_version}_linux_amd64.zip && \
-  unzip vault_${vault_version}_linux_amd64.zip && \
+  curl -sLfO "https://releases.hashicorp.com/vault/${vault_version}/vault_${vault_version}_linux_amd64.zip" && \
+  unzip "vault_${vault_version}_linux_amd64.zip" && \
   mv vault /usr/local/bin/vault && \
-  rm vault_${vault_version}_linux_amd64.zip
+  rm "vault_${vault_version}_linux_amd64.zip"
 
 # Give Vault the ability to run mlock as non-root
 /sbin/setcap cap_ipc_lock=+ep /usr/local/bin/vault
@@ -41,6 +42,7 @@ EOF
 chmod 0600 /etc/vault.d/config.hcl
 
 # Sub in local IP
+# $$ is correct here because we are in terraform template
 sed -i "s/LOCAL_IP/$${LOCAL_IP}/g" /etc/vault.d/config.hcl
 
 # Service environment
@@ -51,12 +53,12 @@ chmod 0600 /etc/vault.d/vault.env
 
 # Download TLS files from GCS
 mkdir -p /etc/vault.d/tls
-gsutil cp gs://${vault_tls_bucket}/${vault_ca_cert_filename} /etc/vault.d/tls/ca.crt
-gsutil cp gs://${vault_tls_bucket}/${vault_tls_cert_filename} /etc/vault.d/tls/vault.crt
-gsutil cp gs://${vault_tls_bucket}/${vault_tls_key_filename} /etc/vault.d/tls/vault.key.enc
+gsutil cp "gs://${vault_tls_bucket}/${vault_ca_cert_filename}" /etc/vault.d/tls/ca.crt
+gsutil cp "gs://${vault_tls_bucket}/${vault_tls_cert_filename}" /etc/vault.d/tls/vault.crt
+gsutil cp "gs://${vault_tls_bucket}/${vault_tls_key_filename}" /etc/vault.d/tls/vault.key.enc
 
 # Decrypt the Vault private key
-cat /etc/vault.d/tls/vault.key.enc | base64 --decode | gcloud kms decrypt \
+base64 --decode < /etc/vault.d/tls/vault.key.enc | gcloud kms decrypt \
   --project="${kms_project}" \
   --location="${kms_location}" \
   --keyring="${kms_keyring}" \
@@ -159,7 +161,7 @@ cat <<EOF > /etc/nginx/sites-available/default
 server {
   listen ${vault_proxy_port};
   location / {
-    proxy_pass $VAULT_ADDR/v1/sys/health?uninitcode=200;
+    proxy_pass $VAULT_ADDR/v1/sys/health?uninitcode=200&standbycode=200;
   }
 }
 EOF

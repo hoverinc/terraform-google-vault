@@ -36,7 +36,7 @@ resource "google_compute_instance_template" "vault" {
   }
 
   disk {
-    source_image = "debian-cloud/debian-9"
+    source_image = var.vault_instance_base_image
     type         = "PERSISTENT"
     disk_type    = "pd-ssd"
     mode         = "READ_WRITE"
@@ -117,7 +117,9 @@ resource "google_compute_region_instance_group_manager" "vault" {
   region = var.region
 
   base_instance_name = "vault-${var.region}"
-  instance_template  = google_compute_instance_template.vault.self_link
+  version {
+    instance_template = google_compute_instance_template.vault.self_link
+  }
   wait_for_instances = false
 
   target_pools = [google_compute_target_pool.vault.self_link]
@@ -125,6 +127,11 @@ resource "google_compute_region_instance_group_manager" "vault" {
   named_port {
     name = "vault-http"
     port = var.vault_port
+  }
+
+  auto_healing_policies {
+    health_check      = google_compute_http_health_check.vault.self_link
+    initial_delay_sec = 300
   }
 
   depends_on = [google_project_service.service]
@@ -150,4 +157,3 @@ resource "google_compute_region_autoscaler" "vault" {
 
   depends_on = [google_project_service.service]
 }
-

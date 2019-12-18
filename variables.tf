@@ -51,10 +51,10 @@ EOF
 }
 
 variable "region" {
-type    = string
-default = "us-east4"
+  type    = string
+  default = "us-east4"
 
-description = <<EOF
+  description = <<EOF
 Region in which to create resources.
 EOF
 
@@ -66,10 +66,10 @@ EOF
 # --------------------
 
 variable "storage_bucket_name" {
-type = string
-default = ""
+  type    = string
+  default = ""
 
-description = <<EOF
+  description = <<EOF
 Name of the Google Cloud Storage bucket for the Vault backend storage. This must
 be globally unique across of of GCP. If left as the empty string, this will
 default to: "<project-id>-vault-data".
@@ -88,7 +88,7 @@ EOF
 }
 
 variable "storage_bucket_class" {
-  type = string
+  type    = string
   default = "MULTI_REGIONAL"
 
   description = <<EOF
@@ -99,19 +99,25 @@ EOF
 }
 
 variable "storage_bucket_enable_versioning" {
-type    = string
-default = false
+  type    = string
+  default = false
 
-description = <<EOF
-Set to true to enable object versioning in the GCS bucket.
+  description = <<EOF
+Set to true to enable object versioning in the GCS bucket.. You may want to
+define lifecycle rules if you want a finite number of old versions.
 EOF
 
 }
 
 variable "storage_bucket_lifecycle_rules" {
-default = []
+  type = list(object({
+    action    = map(any)
+    condition = map(any)
+  }))
 
-description = <<EOF
+  default = []
+
+  description = <<EOF
 If you enable versioning, you may want to expire old versions to configure
 a specific retention. Please, check the documentation for the map keys you
 should use.
@@ -120,13 +126,13 @@ This is specified as a list of objects:
 
     storage_lifecycle_rules = [
       {
-        type = "Delete"
+        action = {
+          type = "Delete"
+        }
+
         conditions = {
-          age = 60,
+          age     = 60
           is_live = false
-          matches_storage_class = ["REGIONAL"]
-          num_newer_versions = 10
-          created_before = "2017-06-13"
         }
       }
     ]
@@ -150,7 +156,7 @@ EOF
 # --------------------
 
 variable "service_account_name" {
-  type = string
+  type    = string
   default = "vault-admin"
 
   description = <<EOF
@@ -160,15 +166,15 @@ EOF
 }
 
 variable "service_account_project_iam_roles" {
-type = list(string)
+  type = list(string)
 
-default = [
-"roles/logging.logWriter",
-"roles/monitoring.metricWriter",
-"roles/monitoring.viewer",
-]
+  default = [
+    "roles/logging.logWriter",
+    "roles/monitoring.metricWriter",
+    "roles/monitoring.viewer",
+  ]
 
-description = <<EOF
+  description = <<EOF
 List of IAM roles for the Vault admin service account to function. If you need
 to add additional roles, update `service_account_project_additional_iam_roles`
 instead.
@@ -177,10 +183,10 @@ EOF
 }
 
 variable "service_account_project_additional_iam_roles" {
-type = list(string)
-default = []
+  type    = list(string)
+  default = []
 
-description = <<EOF
+  description = <<EOF
 List of custom IAM roles to add to the project.
 EOF
 
@@ -207,30 +213,32 @@ EOF
 # --------------------
 
 variable "kms_keyring" {
-  type = string
+  type    = string
+  default = "vault"
 
   description = <<EOF
-Name of the Cloud KMS KeyRing for asset encryption.
+Name of the Cloud KMS KeyRing for asset encryption. Terraform will create this
+keyring.
 EOF
 
 }
 
 variable "kms_crypto_key" {
-type    = string
-default = "vault-init"
+  type    = string
+  default = "vault-init"
 
-description = <<EOF
+  description = <<EOF
 The name of the Cloud KMS Key used for encrypting initial TLS certificates and
-for configuring Vault auto-unseal.
+for configuring Vault auto-unseal. Terraform will create this key.
 EOF
 
 }
 
 variable "kms_protection_level" {
-type = string
-default = "software"
+  type    = string
+  default = "software"
 
-description = <<EOF
+  description = <<EOF
 The protection level to use for the KMS crypto key.
 EOF
 
@@ -257,7 +265,7 @@ EOF
 # --------------------
 
 variable "ssh_allowed_cidrs" {
-  type = list(string)
+  type    = list(string)
   default = ["0.0.0.0/0"]
 
   description = <<EOF
@@ -273,10 +281,10 @@ EOF
 # --------------------
 
 variable "manage_tls" {
-type    = string
-default = "true"
+  type    = bool
+  default = true
 
-description = <<EOF
+  description = <<EOF
 Set to "false" if you'd like to manage and upload your own TLS files, if you do not want this module
 to generate them. By default this module expects the following files at the root of the bucket, but these
 can be overriden:
@@ -288,91 +296,62 @@ EOF
 }
 
 variable "tls_ca_subject" {
-description = "The `subject` block for the root CA certificate."
-type = object({
-  common_name = string,
-  organization = string,
-  organizational_unit = string,
-  street_address = list(string),
-  locality = string,
-  province = string,
-  country = string,
-  postal_code = string,
-})
+  description = "The `subject` block for the root CA certificate."
+  type = object({
+    common_name         = string,
+    organization        = string,
+    organizational_unit = string,
+    street_address      = list(string),
+    locality            = string,
+    province            = string,
+    country             = string,
+    postal_code         = string,
+  })
 
   default = {
-    common_name = "Example Inc. Root"
-    organization = "Example, Inc"
+    common_name         = "Example Inc. Root"
+    organization        = "Example, Inc"
     organizational_unit = "Department of Certificate Authority"
-    street_address = ["123 Example Street"]
-    locality = "The Intranet"
-    province = "CA"
-    country = "US"
-    postal_code = "95559-1227"
+    street_address      = ["123 Example Street"]
+    locality            = "The Intranet"
+    province            = "CA"
+    country             = "US"
+    postal_code         = "95559-1227"
   }
 }
 
 variable "tls_cn" {
-description = "The TLS Common Name for the TLS certificates"
-default = "vault.example.net"
+  description = "The TLS Common Name for the TLS certificates"
+  default     = "vault.example.net"
 }
 
 variable "tls_dns_names" {
-description = "List of DNS names added to the Vault server self-signed certificate"
-type = list(string)
-default = ["vault.example.net"]
+  description = "List of DNS names added to the Vault server self-signed certificate"
+  type        = list(string)
+  default     = ["vault.example.net"]
 }
 
 variable "tls_ips" {
-description = "List of IP addresses added to the Vault server self-signed certificate"
-type = list(string)
-default = ["127.0.0.1"]
+  description = "List of IP addresses added to the Vault server self-signed certificate"
+  type        = list(string)
+  default     = ["127.0.0.1"]
+}
+
+variable "tls_save_ca_to_disk" {
+  type    = bool
+  default = true
+
+  description = <<EOF
+Save the CA public certificate on the local filesystem. The CA is always stored
+in GCS, but this option also saves it to the filesystem.
+EOF
 }
 
 variable "tls_ou" {
-description = "The TLS Organizational Unit for the TLS certificate"
-default = "IT Security Operations"
+  description = "The TLS Organizational Unit for the TLS certificate"
+  default     = "IT Security Operations"
 }
 
-variable "vault_ca_cert_filename" {
-type = string
-default = "ca.crt"
-
-description = <<EOF
-GCS object path within the vault_tls_bucket. This is the root CA certificate.
-EOF
-
-}
-
-variable "vault_tls_bucket" {
-  type    = string
-  default = ""
-
-  description = <<EOF
-GCS Bucket override where Vault will expect TLS certificates are stored.
-EOF
-
-}
-
-variable "vault_tls_cert_filename" {
-  type = string
-  default = "vault.crt"
-
-  description = <<EOF
-GCS object path within the vault_tls_bucket. This is the vault server certificate.
-EOF
-
-}
-
-variable "vault_tls_key_filename" {
-type    = string
-default = "vault.key.enc"
-
-description = <<EOF
-Encrypted and base64 encoded GCS object path within the vault_tls_bucket. This is the Vault TLS private key.
-EOF
-
-}
 
 #
 #
@@ -380,10 +359,10 @@ EOF
 # --------------------
 
 variable "vault_allowed_cidrs" {
-type = list(string)
-default = ["0.0.0.0/0"]
+  type    = list(string)
+  default = ["0.0.0.0/0"]
 
-description = <<EOF
+  description = <<EOF
 List of CIDR blocks to allow access to the Vault nodes. Since the load balancer
 is a pass-through load balancer, this must also include all IPs from which you
 will access Vault. The default is unrestricted (any IP address can access
@@ -406,7 +385,7 @@ EOF
 }
 
 variable "vault_instance_labels" {
-  type = map(string)
+  type    = map(string)
   default = {}
 
   description = <<EOF
@@ -415,21 +394,42 @@ EOF
 
 }
 
-variable "vault_instance_metadata" {
-type    = map(string)
-default = {}
+variable "vault_ca_cert_filename" {
+  type    = string
+  default = "ca.crt"
 
-description = <<EOF
+  description = <<EOF
+GCS object path within the vault_tls_bucket. This is the root CA certificate.
+EOF
+
+}
+
+variable "vault_instance_metadata" {
+  type    = map(string)
+  default = {}
+
+  description = <<EOF
 Additional metadata to add to the Vault instances.
 EOF
 
 }
 
-variable "vault_instance_tags" {
-type = list(string)
-default = []
+variable "vault_instance_base_image" {
+  type    = string
+  default = "debian-cloud/debian-9"
 
-description = <<EOF
+  description = <<EOF
+Base operating system image in which to install Vault. This must be a
+Debian-based system at the moment due to how the metadata startup script
+runs.
+EOF
+}
+
+variable "vault_instance_tags" {
+  type    = list(string)
+  default = []
+
+  description = <<EOF
 Additional tags to apply to the instances. Note "allow-ssh" and "allow-vault"
 will be present on all instances.
 EOF
@@ -447,7 +447,7 @@ EOF
 }
 
 variable "vault_min_num_servers" {
-  type = string
+  type    = string
   default = "1"
 
   description = <<EOF
@@ -458,20 +458,20 @@ EOF
 }
 
 variable "vault_machine_type" {
-type    = string
-default = "n1-standard-1"
+  type    = string
+  default = "n1-standard-1"
 
-description = <<EOF
+  description = <<EOF
 Machine type to use for Vault instances.
 EOF
 
 }
 
 variable "vault_max_num_servers" {
-type = string
-default = "7"
+  type    = string
+  default = "7"
 
-description = <<EOF
+  description = <<EOF
 Maximum number of Vault server nodes to run at one time. The group will not
 autoscale beyond this number.
 EOF
@@ -491,7 +491,7 @@ EOF
 }
 
 variable "vault_proxy_port" {
-  type = string
+  type    = string
   default = "58200"
 
   description = <<EOF
@@ -504,21 +504,51 @@ EOF
 }
 
 variable "vault_tls_disable_client_certs" {
-type    = string
-default = false
+  type    = string
+  default = false
 
-description = <<EOF
+  description = <<EOF
 Use and expect client certificates. You may want to disable this if users will
 not be authenticating to Vault with client certificates.
 EOF
 
 }
 
-variable "vault_ui_enabled" {
-type = string
-default = true
+variable "vault_tls_bucket" {
+  type    = string
+  default = ""
 
-description = <<EOF
+  description = <<EOF
+GCS Bucket override where Vault will expect TLS certificates are stored.
+EOF
+
+}
+
+variable "vault_tls_cert_filename" {
+  type    = string
+  default = "vault.crt"
+
+  description = <<EOF
+GCS object path within the vault_tls_bucket. This is the vault server certificate.
+EOF
+
+}
+
+variable "vault_tls_key_filename" {
+  type    = string
+  default = "vault.key.enc"
+
+  description = <<EOF
+Encrypted and base64 encoded GCS object path within the vault_tls_bucket. This is the Vault TLS private key.
+EOF
+
+}
+
+variable "vault_ui_enabled" {
+  type    = string
+  default = true
+
+  description = <<EOF
 Controls whether the Vault UI is enabled and accessible.
 EOF
 
@@ -534,4 +564,3 @@ the HashiCorp releases service.
 EOF
 
 }
-
