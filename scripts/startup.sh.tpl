@@ -161,7 +161,7 @@ cat <<EOF > /etc/nginx/sites-available/default
 server {
   listen ${vault_proxy_port};
   location / {
-    proxy_pass $VAULT_ADDR/v1/sys/health?uninitcode=200;
+    proxy_pass $VAULT_ADDR/v1/sys/health?uninitcode=200&standbycode=200;
   }
 }
 EOF
